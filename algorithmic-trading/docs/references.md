@@ -1,6 +1,5 @@
-DataFrame: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html
+| Description           |                    Link                    |  
+|-----------------------|:------------------------------------------:|  
+| Alphavantage API DOCS | https://www.alphavantage.co/documentation/ |  
 
-Alphavantage API DOCS
-https://www.alphavantage.co/documentation/
-
-[Return to Main](../readme.md)
+[README.md](../readme.md)
