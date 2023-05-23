@@ -1,6 +1,6 @@
 from datetime import datetime
 import matplotlib.pyplot as plt
-from oop.yahoofinance import YahooFinance
+from yahoo.yahoofinance import YahooFinance
 import pandas as pd
 # This is a sample Python script.
 

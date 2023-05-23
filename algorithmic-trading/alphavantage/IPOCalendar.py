@@ -1,7 +1,7 @@
 import requests
 import csv
 import pandas as pd
-
+from helpers.DataFrameHelper import set_data_frame_options
 
 class IPOCalendar:
     # Free service params
@@ -17,6 +17,7 @@ class IPOCalendar:
 
     def __init__(self, use_free_service):
         self.__class__.use_free_service = use_free_service
+        set_data_frame_options()
 
 
     def get_api_key(self):
