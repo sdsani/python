@@ -3,7 +3,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import json
 import requests
-from alphavantage.StockInfo import StockInfo
+from financialservices.alphavantage.StockInfo import StockInfo
 
 # This is a sample Python script.
 

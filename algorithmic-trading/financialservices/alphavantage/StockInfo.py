@@ -1,9 +1,8 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import requests
 import json
-from helpers.DataFrameHelper import set_data_frame_options
+from financialservices.financeservice import FinanceService
 
 
 # https://www.alphavantage.co/
@@ -12,7 +11,7 @@ from helpers.DataFrameHelper import set_data_frame_options
 # This class is based on following exercise
 # https://colab.research.google.com/drive/1Wevcd45qwNVTKXzQVeOKwrB4Sn_IGjoN#scrollTo=UWuaIbZdvnJh
 
-class StockInfo:
+class StockInfo(FinanceService):
     generic_url = 'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={key}'
 
     # Free service params
@@ -28,15 +27,13 @@ class StockInfo:
     premium_meta_key = 'Time Series (Daily)'
 
     def __init__(self, ticker, simple_moving_average_1, simple_moving_average_2):
-        self.stock_df = None
-        self.signal_df = None
         self.use_premium = False
-        self.ticker = ticker
-        self.simple_moving_average_1 = simple_moving_average_1
-        self.simple_moving_average_2 = simple_moving_average_2
-        set_data_frame_options()
+        FinanceService.__init__(self, ticker, 'close', simple_moving_average_1, simple_moving_average_2)
+
+    def load_financial_data(self):
         self.load_data()
-        self.build_signal()
+        self.build_simple_moving_average()
+        self.build_dual_signal_data()
 
     def build_service_url(self, use_premium):
         return self.__class__.generic_url.format(function=self.get_function(use_premium), \
@@ -92,37 +89,9 @@ class StockInfo:
         # Convert pandas default dataframe index attribute into a datetime index
         # attribute so that you have a standard time series
         stock.index = pd.to_datetime(stock.index)
-        self.stock_df = stock
-        self.stock_df = self.stock_df.sort_index(ascending=True)
-
-    # def plot(self, column_name):
-    #    self.stock_df[column_name].plot(figsize=(20, 5), title=f'{self.ticker} daily closing prices'), plt.show();
+        self.stock_data = stock
+        self.stock_data = self.stock_data.sort_index(ascending=True)
 
     def plot_moving_average(self):
-        self.signal_df[['close', 'SMA1', 'SMA2']].plot(figsize=(20, 5), grid=True,
+        self.signal_data[['close', 'SMA1', 'SMA2']].plot(figsize=(20, 5), grid=True,
                                                       title=f'The 20 and 50 day simple moving averages of {self.ticker}'), plt.show();
-
-    def build_moving_average(self, column_name, number_of_days):
-        return self.stock_df[column_name].rolling(number_of_days).mean()
-
-    def build_signal(self):
-        # Start with empty dataframe
-        self.signal_df = pd.DataFrame()
-        # 20 days and 50 days simple moving average.
-        self.signal_df['SMA1'] = self.build_moving_average('close', self.simple_moving_average_1)
-        self.signal_df['SMA2'] = self.build_moving_average('close', self.simple_moving_average_2)
-        self.signal_df['change'] = self.stock_df['close'].diff()
-        self.signal_df['crossover'] = self.signal_df['SMA1'] - self.signal_df['SMA2']
-        self.signal_df['close'] = self.stock_df['close']
-        # When 20 days SMA is above 50 days SMA then signal is +ve and vice versa
-        self.signal_df['signal'] = np.where(self.signal_df['crossover'] > 0, 1, -1)
-        self.signal_df.dropna(inplace=True)
-        self.signal_df = self.signal_df.sort_index(ascending=True)
-
-    def sample_signal(self, sample_type, sample_size):
-        if sample_type == 'head':
-            return self.signal_df.head(sample_size)
-        elif sample_type == 'tail':
-            return self.signal_df.tail(sample_size)
-        else:
-            return self.signal_df.sample(sample_size)
