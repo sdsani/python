@@ -31,16 +31,27 @@ def display_data():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    stocks = ['GTLB', 'RIVN', 'TSLA', 'MSFT', 'AAPL']
+    for stock in stocks:
+        print(f"Signal info for {stock}")
+        av = StockInfo(stock, 20, 50)
+        print(av.sample_signal('tail', 20))
+
+    #av = StockInfo('MSFT', 20, 50)
+    #print(av.sample_signal('tail', 20))
+    #av.plot_moving_average()
+
     # display_data()
-    av = StockInfo('MSFT')
+    # av = StockInfo('RIVN')
+    #av = StockInfo('MSFT')
     # av = StockInfo('AAPL')
-    av.sort(True)
-    print("Random Sample")
-    av.sample(10)
-    print("Head")
-    av.head()
-    print("Trail")
-    av.tail()
-    av.plot_moving_average()
+    #av.sort(True)
+    #print("Random Sample")
+    #av.sample(10)
+    #print("Head")
+    #av.head()
+    #print("Trail")
+    #av.tail()
+    #av.plot_moving_average()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

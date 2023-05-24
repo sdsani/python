@@ -3,7 +3,7 @@ import pandas as pd
 # https://note.nkmk.me/en/python-pandas-option-setting/
 # https://pandas.pydata.org/pandas-docs/stable/user_guide/options.html
 display_settings = {
-    'max_columns': 10,
+    'max_columns': 15,
     'expand_frame_repr': False,  # Wrap to multiple pages
     'max_rows': 20,
     'precision': 2,

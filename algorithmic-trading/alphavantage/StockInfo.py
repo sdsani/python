@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import pandas_datareader.data as pdr
-from datetime import datetime
 import matplotlib.pyplot as plt
 import requests
 import json
@@ -29,15 +27,16 @@ class StockInfo:
     premium_function = 'TIME_SERIES_DAILY'
     premium_meta_key = 'Time Series (Daily)'
 
-    simple_moving_average_1 = 20
-    simple_moving_average_2 = 50
-
-    def __init__(self, ticker):
+    def __init__(self, ticker, simple_moving_average_1, simple_moving_average_2):
         self.stock_df = None
+        self.signal_df = None
         self.use_premium = False
         self.ticker = ticker
+        self.simple_moving_average_1 = simple_moving_average_1
+        self.simple_moving_average_2 = simple_moving_average_2
         set_data_frame_options()
         self.load_data()
+        self.build_signal()
 
     def build_service_url(self, use_premium):
         return self.__class__.generic_url.format(function=self.get_function(use_premium), \
@@ -73,7 +72,7 @@ class StockInfo:
 
         # Service returns response as Json. Transform into dictionary.
         alphadict = json.loads(response.text)
-        print(alphadict.keys())
+        #print(alphadict.keys())
 
         # print("JSON representation of the data")
         # print(alphadict)
@@ -94,56 +93,36 @@ class StockInfo:
         # attribute so that you have a standard time series
         stock.index = pd.to_datetime(stock.index)
         self.stock_df = stock
-        dual_moving_average = self.build_dual_moving_average()
-        # merge stock with dual moving average
-        self.stock_df.join(dual_moving_average, how='left').head()
-
-    def sort(self, sort_asc):
-        if sort_asc:
-            self.stock_df = self.stock_df.sort_index(ascending=True)
-        else:
-            self.stock_df = self.stock_df.sort_index(ascending=False)
+        self.stock_df = self.stock_df.sort_index(ascending=True)
 
     # def plot(self, column_name):
     #    self.stock_df[column_name].plot(figsize=(20, 5), title=f'{self.ticker} daily closing prices'), plt.show();
 
     def plot_moving_average(self):
-        # 20 days and 50 days simple moving average.
-        self.build_dual_moving_average()
-        # self.stock_df['SMA1'] = self.build_moving_average('close', self.__class__.simple_moving_average_1)
-        # self.stock_df['SMA2'] = self.build_moving_average('close', self.__class__.simple_moving_average_2)
-        self.stock_df.dropna(inplace=True)
-        # print(self.stock_df)
-        self.stock_df[['close', 'SMA1', 'SMA2']].plot(figsize=(20, 5), grid=True,
-                                                      title=f'The 20 and 50 day simple moving averages of {self.ticker}') \
-                                                      , plt.show();
+        self.signal_df[['close', 'SMA1', 'SMA2']].plot(figsize=(20, 5), grid=True,
+                                                      title=f'The 20 and 50 day simple moving averages of {self.ticker}'), plt.show();
 
     def build_moving_average(self, column_name, number_of_days):
         return self.stock_df[column_name].rolling(number_of_days).mean()
 
-    def build_dual_moving_average(self):
+    def build_signal(self):
         # Start with empty dataframe
-        dual_moving_average = pd.DataFrame()
+        self.signal_df = pd.DataFrame()
         # 20 days and 50 days simple moving average.
-        dual_moving_average['SMA1'] = self.build_moving_average('close', self.__class__.simple_moving_average_1)
-        dual_moving_average['SMA2'] = self.build_moving_average('close', self.__class__.simple_moving_average_2)
-        dual_moving_average['change'] = self.stock_df['close'].diff()
-        dual_moving_average['crossover'] = dual_moving_average['SMA1'] - dual_moving_average['SMA2']
+        self.signal_df['SMA1'] = self.build_moving_average('close', self.simple_moving_average_1)
+        self.signal_df['SMA2'] = self.build_moving_average('close', self.simple_moving_average_2)
+        self.signal_df['change'] = self.stock_df['close'].diff()
+        self.signal_df['crossover'] = self.signal_df['SMA1'] - self.signal_df['SMA2']
+        self.signal_df['close'] = self.stock_df['close']
         # When 20 days SMA is above 50 days SMA then signal is +ve and vice versa
-        dual_moving_average['signal'] = np.where(dual_moving_average['crossover'] > 0, 1, -1)
-        dual_moving_average.dropna(inplace=True)
-        dual_moving_average = dual_moving_average.sort_index(ascending=True)
-        print(dual_moving_average.tail(20))
-        return dual_moving_average
+        self.signal_df['signal'] = np.where(self.signal_df['crossover'] > 0, 1, -1)
+        self.signal_df.dropna(inplace=True)
+        self.signal_df = self.signal_df.sort_index(ascending=True)
 
-    def sample(self, sample_size):
-        # Picks a random sample from the dataset in your dataframe
-        print(self.stock_df.sample(10))
-
-    def head(self):
-        # Picks a random sample from the dataset in your dataframe
-        print(self.stock_df.head())
-
-    def tail(self):
-        # Picks a random sample from the dataset in your dataframe
-        print(self.stock_df.tail())
+    def sample_signal(self, sample_type, sample_size):
+        if sample_type == 'head':
+            return self.signal_df.head(sample_size)
+        elif sample_type == 'tail':
+            return self.signal_df.tail(sample_size)
+        else:
+            return self.signal_df.sample(sample_size)
